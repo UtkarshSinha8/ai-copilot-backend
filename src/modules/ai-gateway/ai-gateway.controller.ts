@@ -6,10 +6,10 @@ import { IsString, IsArray, IsOptional, IsNumber } from 'class-validator';
 // DTO for direct AI chat — used for testing the gateway
 class DirectChatDto {
   @IsArray()
-  messages: ChatMessage[];
+  messages!: ChatMessage[];
 
   @IsString()
-  model: string;
+  model!: string;
 
   @IsOptional()
   @IsNumber()

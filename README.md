@@ -1,98 +1,167 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# AI Operations Copilot
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A multi-tenant AI backend platform built for businesses. Companies can connect their data, ask questions about it, and trigger automated workflows — all through a single API.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This is not a tutorial project. Every architectural decision was made with production scale in mind — multi-tenancy, security, async processing, and model-agnostic AI integration.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+| Layer | Technology |
+|-------|------------|
+| Backend | NestJS, TypeScript |
+| Database | PostgreSQL, pgvector |
+| Cache | Redis |
+| Job Queues | BullMQ |
+| AI | OpenRouter |
+| Auth | JWT, Passport.js |
+| Infra | Docker, Docker Compose |
+| Deployment | AWS EC2 |
+
+---
+
+## What is built so far
+
+### Phase 1 (Complete)
+
+JWT authentication with refresh token rotation. Every refresh token is bcrypt hashed before hitting the database. On every refresh call the old token is invalidated and a new pair is issued — so stolen tokens have a one-time use window at most.
+
+Role based access control using NestJS Guards and custom decorators. Permissions are enforced at the route level, completely decoupled from business logic.
+
+Persistent chat system where every message is stored with its role, token count, and the model that generated it. Each chat tracks its own model — users can switch between GPT-4o, Claude, Mistral mid-conversation.
+
+Real-time AI response streaming via Server-Sent Events. The response comes token by token, not all at once. The AI Gateway is an abstraction layer over OpenRouter — switching the model provider requires changing exactly one file.
+
+Multi-tenant data isolation enforced at every layer. Every chat operation checks that the requesting user owns the resource before doing anything.
+
+### Phase 2 (In Progress)
+
+Document upload and processing pipeline. Files get chunked, embedded, and stored as vectors in PostgreSQL using pgvector. When a user asks a question, the system finds the most semantically relevant chunks and injects them into the prompt. This is RAG — Retrieval Augmented Generation.
+
+Redis caching for frequent queries and repeated AI responses.
+
+BullMQ workers for async job processing. Heavy tasks like document embedding run in the background. The API returns immediately with a job ID.
+
+### Phase 3 (Planned)
+
+Workflow automation engine. Users define trigger-action pipelines — upload a document, summarize it, send a notification.
+
+Function calling so the AI can actually take actions — create tasks, query databases, send emails.
+
+GitHub Actions CI/CD pipeline with AWS EC2 deployment.
+
+OpenTelemetry traces on every AI call with token usage and cost attribution per user.
+
+---
+
+## Getting Started
+
+### Requirements
+
+- Node.js 18+
+- Docker and Docker Compose
+- OpenRouter API key (free tier works fine — openrouter.ai)
+
+### Setup
 
 ```bash
-$ npm install
+git clone https://github.com/UtkarshSinha8/ai-copilot-backend.git
+cd ai-copilot-backend
+npm install
+cp .env.example .env
 ```
 
-## Compile and run the project
+Open `.env` and fill in your values.
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker-compose up -d
+npm run start:dev
 ```
 
-## Run tests
+API runs at `http://localhost:3000/api`
 
-```bash
-# unit tests
-$ npm run test
+---
 
-# e2e tests
-$ npm run test:e2e
+## API
 
-# test coverage
-$ npm run test:cov
+### Auth
+
+| Method | Route | Auth Required |
+|--------|-------|---------------|
+| POST | /api/auth/register | No |
+| POST | /api/auth/login | No |
+| POST | /api/auth/refresh | No |
+| POST | /api/auth/logout | Yes |
+| POST | /api/auth/me | Yes |
+
+### Chats
+
+| Method | Route | Auth Required |
+|--------|-------|---------------|
+| POST | /api/chats | Yes |
+| GET | /api/chats | Yes |
+| GET | /api/chats/:id | Yes |
+| GET | /api/chats/:id/history | Yes |
+| PATCH | /api/chats/:id | Yes |
+| DELETE | /api/chats/:id | Yes |
+| POST | /api/chats/:id/messages | Yes |
+
+### AI
+
+| Method | Route | Auth Required |
+|--------|-------|---------------|
+| GET | /api/ai/models | Yes |
+| POST | /api/ai/chat | Yes |
+
+---
+
+## Project Structure
+
+```
+src/
+    config/
+        database.config.ts
+        jwt.config.ts
+        redis.config.ts
+        openrouter.config.ts
+    common/
+        guards/
+            roles.guard.ts
+        decorators/
+            roles.decorator.ts
+            current-user.decorator.ts
+        filters/
+            http-exception.filter.ts
+        interceptors/
+            response.interceptor.ts
+    modules/
+        auth/
+        users/
+        chat/
+        ai-gateway/
+    app.module.ts
+    main.ts
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Key Decisions
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+**UUID primary keys** — integer IDs are sequential and guessable. UUIDs are not. In a multi-tenant system this matters.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+**Refresh token rotation** — tokens are hashed before storage. Each use invalidates the previous token. A leaked refresh token is useless after one rotation cycle.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**AI Gateway as abstraction** — the rest of the application never imports anything from OpenRouter directly. The gateway is the only file that knows which provider is being used.
 
-## Resources
+**Soft delete on chats** — rows are never hard deleted. The deletedAt timestamp is set instead. Data is preserved for audit trails and potential recovery.
 
-Check out a few resources that may come in handy when working with NestJS:
+**Ownership verification** — every single chat and message operation checks that the authenticated user is the owner of that resource. This is the core of multi-tenant isolation.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+**Last 20 messages as context** — sending full chat history to the AI would exceed token limits on long conversations and increase cost linearly. 20 messages is enough context for coherent responses.
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Environment Variables
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+See `.env.example` for the full list of required variables.
