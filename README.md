@@ -1,8 +1,51 @@
 # AI Operations Copilot
 
-A multi-tenant AI backend platform built for businesses. Companies can connect their data, ask questions about it, and trigger automated workflows — all through a single API.
+A production-grade multi-tenant AI backend platform. Businesses upload their documents, connect their APIs, and ask natural language questions — the system finds relevant context from their data and answers using LLMs. Built and deployed end to end.
 
-This is not a tutorial project. Every architectural decision was made with production scale in mind — multi-tenancy, security, async processing, and model-agnostic AI integration.
+**Live API:** http://51.20.193.203:3000/api
+
+---
+
+## What this actually does
+
+Most AI chatbots answer from training data only. This platform lets businesses bring their own data. Upload a document, ask a question about it, and the system finds the most relevant parts of that document and uses them to answer — accurately, without hallucinating.
+
+```
+Without RAG:  User asks "what is our refund policy?"
+              AI guesses from training data
+
+With RAG:     User asks "what is our refund policy?"
+              System searches uploaded policy documents
+              Finds the exact relevant section
+              AI answers using actual company policy
+```
+
+---
+
+## Live Demo
+
+### Document Upload — queued for background processing instantly
+![Document Upload](<img width="1121" height="670" alt="chat_response" src="https://github.com/user-attachments/assets/d5241c57-aac1-4423-b737-2663007ea568" />)
+
+### RAG Pipeline — first query hits vector search, retrieves 5 chunks
+![RAG Response](<img width="735" height="531" alt="EC2_instance_deployed" src="https://github.com/user-attachments/assets/202577eb-f47f-4f5e-bad2-6ce651155ab7" />
+)
+
+### Redis Cache Hit — same question returns in 24ms from cache
+![Cache Hit](<img width="1364" height="641" alt="queue_processing" src="https://github.com/user-attachments/assets/534d1f62-d99e-4088-bb17-214d6f1911c3" />)
+
+### Streaming AI Response — tokens arrive in real time via SSE
+![Streaming](<img width="647" height="389" alt="pgvector Verification" src="https://github.com/user-attachments/assets/253ed233-db4d-457a-b8da-095740c0aa36" />)
+
+### pgvector  table creation and embedding storage confirmation
+![pgvector](<img width="1083" height="659" alt="cache_true" src="https://github.com/user-attachments/assets/0848e97d-48b4-497a-9b51-428c4e469730" />)
+
+### AWS EC2 — deployed and running at 51.20.193.203
+![EC2 Instance](<img width="1285" height="169" alt="docker_container" src="https://github.com/user-attachments/assets/623e8322-4796-4212-b06a-f49469fb94db" />)
+
+### Docker Containers on EC2 — all three services up
+![Docker Containers](<img width="1102" height="727" alt="chat_stream" src="https://github.com/user-attachments/assets/faf606c1-fce2-4003-bdab-91d46c82825f" />
+)
 
 ---
 
@@ -11,47 +54,100 @@ This is not a tutorial project. Every architectural decision was made with produ
 | Layer | Technology |
 |-------|------------|
 | Backend | NestJS, TypeScript |
-| Database | PostgreSQL, pgvector |
+| Database | PostgreSQL with pgvector |
 | Cache | Redis |
 | Job Queues | BullMQ |
-| AI | OpenRouter |
-| Auth | JWT, Passport.js |
-| Infra | Docker, Docker Compose |
-| Deployment | AWS EC2 |
+| AI Gateway | OpenRouter |
+| Auth | JWT with refresh token rotation |
+| Deployment | Docker, AWS EC2 |
 
 ---
 
-## What is built so far
+## Features
 
-### Phase 1 (Complete)
+### Authentication
+JWT authentication with refresh token rotation. Access tokens expire in 15 minutes. Refresh tokens are bcrypt-hashed before storage — a compromised database cannot be used to forge tokens. Every refresh call issues a new token pair and invalidates the previous one.
 
-JWT authentication with refresh token rotation. Every refresh token is bcrypt hashed before hitting the database. On every refresh call the old token is invalidated and a new pair is issued — so stolen tokens have a one-time use window at most.
+### Role Based Access Control
+Guards and custom decorators enforce permissions at the route level. Business logic has no knowledge of authorization rules.
 
-Role based access control using NestJS Guards and custom decorators. Permissions are enforced at the route level, completely decoupled from business logic.
+### Document Upload and Processing
+Files are uploaded via multipart form data, stored on disk with UUID filenames to prevent path traversal attacks, and immediately queued for background processing via BullMQ. The API returns a job ID instantly without blocking.
 
-Persistent chat system where every message is stored with its role, token count, and the model that generated it. Each chat tracks its own model — users can switch between GPT-4o, Claude, Mistral mid-conversation.
+### RAG Pipeline
+Documents are chunked into overlapping segments, each chunk is embedded using an LLM embedding model, and the vectors are stored in PostgreSQL using the pgvector extension. When a user asks a question, the system runs a similarity search against all their document chunks and retrieves the most relevant ones. Those chunks are injected into the AI prompt as context.
 
-Real-time AI response streaming via Server-Sent Events. The response comes token by token, not all at once. The AI Gateway is an abstraction layer over OpenRouter — switching the model provider requires changing exactly one file.
+### Redis Caching
+Identical questions return cached answers in milliseconds. First query hits the full RAG pipeline. Subsequent identical queries return from Redis cache. Response time drops from seconds to under 30ms on cache hits.
 
-Multi-tenant data isolation enforced at every layer. Every chat operation checks that the requesting user owns the resource before doing anything.
+### Streaming AI Responses
+AI responses stream token by token via Server-Sent Events. The client starts receiving content immediately rather than waiting for the full response.
 
-### Phase 2 (In Progress)
+### BullMQ Job Queues
+Document embedding runs in background workers via BullMQ backed by Redis. The HTTP layer stays fast regardless of how long processing takes.
 
-Document upload and processing pipeline. Files get chunked, embedded, and stored as vectors in PostgreSQL using pgvector. When a user asks a question, the system finds the most semantically relevant chunks and injects them into the prompt. This is RAG — Retrieval Augmented Generation.
+### Multi-Tenant Isolation
+Every query, every entity, every guard enforces that users can only access their own data. No cross-tenant data leakage is possible at the application layer.
 
-Redis caching for frequent queries and repeated AI responses.
+---
 
-BullMQ workers for async job processing. Heavy tasks like document embedding run in the background. The API returns immediately with a job ID.
+## Deployment
 
-### Phase 3 (Planned)
+Running on AWS EC2 t3.micro. The full stack runs inside Docker containers managed by Docker Compose.
 
-Workflow automation engine. Users define trigger-action pipelines — upload a document, summarize it, send a notification.
+```
+Live URL:     http://51.20.193.203:3000/api
+EC2 Type:     t3.micro
+Region:       eu-north-1
+Containers:   ai_copilot_backend  → port 3000
+              ai_copilot_postgres → port 5432
+              ai_copilot_redis    → port 6379
+```
 
-Function calling so the AI can actually take actions — create tasks, query databases, send emails.
+---
 
-GitHub Actions CI/CD pipeline with AWS EC2 deployment.
+## API Reference
 
-OpenTelemetry traces on every AI call with token usage and cost attribution per user.
+### Auth
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | /api/auth/register | Register | No |
+| POST | /api/auth/login | Login | No |
+| POST | /api/auth/refresh | Refresh tokens | No |
+| POST | /api/auth/logout | Logout | Yes |
+| POST | /api/auth/me | Current user | Yes |
+
+### Chats
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | /api/chats | Create chat | Yes |
+| GET | /api/chats | Get all chats | Yes |
+| GET | /api/chats/:id | Get chat | Yes |
+| GET | /api/chats/:id/history | Message history | Yes |
+| POST | /api/chats/:id/messages | Send message (streaming) | Yes |
+| PATCH | /api/chats/:id | Update chat | Yes |
+| DELETE | /api/chats/:id | Delete chat | Yes |
+
+### Documents
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | /api/documents/upload | Upload document | Yes |
+| GET | /api/documents | Get all documents | Yes |
+| GET | /api/documents/:id | Get document | Yes |
+| GET | /api/documents/:id/chunks | Get chunks | Yes |
+| POST | /api/documents/search | Semantic search | Yes |
+| POST | /api/documents/ask | Ask question (RAG) | Yes |
+| DELETE | /api/documents/:id | Delete document | Yes |
+
+### AI Gateway
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /api/ai/models | Available models | Yes |
+| POST | /api/ai/chat | Direct chat | Yes |
 
 ---
 
@@ -61,58 +157,27 @@ OpenTelemetry traces on every AI call with token usage and cost attribution per 
 
 - Node.js 18+
 - Docker and Docker Compose
-- OpenRouter API key (free tier works fine — openrouter.ai)
+- OpenRouter API key — free tier at openrouter.ai
 
-### Setup
+### Run Locally
 
 ```bash
 git clone https://github.com/UtkarshSinha8/ai-copilot-backend.git
 cd ai-copilot-backend
 npm install
 cp .env.example .env
-```
-
-Open `.env` and fill in your values.
-
-```bash
+# fill in your values in .env
 docker-compose up -d
 npm run start:dev
 ```
 
 API runs at `http://localhost:3000/api`
 
----
+### Run Against Live Server
 
-## API
+All endpoints are live at `http://51.20.193.203:3000/api`
 
-### Auth
-
-| Method | Route | Auth Required |
-|--------|-------|---------------|
-| POST | /api/auth/register | No |
-| POST | /api/auth/login | No |
-| POST | /api/auth/refresh | No |
-| POST | /api/auth/logout | Yes |
-| POST | /api/auth/me | Yes |
-
-### Chats
-
-| Method | Route | Auth Required |
-|--------|-------|---------------|
-| POST | /api/chats | Yes |
-| GET | /api/chats | Yes |
-| GET | /api/chats/:id | Yes |
-| GET | /api/chats/:id/history | Yes |
-| PATCH | /api/chats/:id | Yes |
-| DELETE | /api/chats/:id | Yes |
-| POST | /api/chats/:id/messages | Yes |
-
-### AI
-
-| Method | Route | Auth Required |
-|--------|-------|---------------|
-| GET | /api/ai/models | Yes |
-| POST | /api/ai/chat | Yes |
+Register an account and start making requests directly — no local setup needed.
 
 ---
 
@@ -121,47 +186,55 @@ API runs at `http://localhost:3000/api`
 ```
 src/
     config/
-        database.config.ts
-        jwt.config.ts
-        redis.config.ts
-        openrouter.config.ts
     common/
         guards/
-            roles.guard.ts
         decorators/
-            roles.decorator.ts
-            current-user.decorator.ts
         filters/
-            http-exception.filter.ts
         interceptors/
-            response.interceptor.ts
     modules/
         auth/
         users/
         chat/
         ai-gateway/
+        documents/
     app.module.ts
     main.ts
 ```
 
 ---
 
-## Key Decisions
+## Key Architecture Decisions
 
-**UUID primary keys** — integer IDs are sequential and guessable. UUIDs are not. In a multi-tenant system this matters.
+**UUID primary keys** — sequential integers are guessable. UUIDs are not. Every entity uses UUID primary keys.
 
-**Refresh token rotation** — tokens are hashed before storage. Each use invalidates the previous token. A leaked refresh token is useless after one rotation cycle.
+**Refresh token rotation** — tokens are hashed with bcrypt before storage. Each use invalidates the previous token. A leaked token has a one-time use window at most.
 
-**AI Gateway as abstraction** — the rest of the application never imports anything from OpenRouter directly. The gateway is the only file that knows which provider is being used.
+**AI Gateway abstraction** — the application never imports OpenRouter directly. Switching providers requires changing one file.
 
-**Soft delete on chats** — rows are never hard deleted. The deletedAt timestamp is set instead. Data is preserved for audit trails and potential recovery.
+**pgvector over external vector DB** — vector search runs inside the same PostgreSQL instance. No additional infrastructure, no additional cost, no network hop.
 
-**Ownership verification** — every single chat and message operation checks that the authenticated user is the owner of that resource. This is the core of multi-tenant isolation.
+**BullMQ for document processing** — embedding a document takes 10 to 30 seconds. This runs in background workers. The API returns immediately.
 
-**Last 20 messages as context** — sending full chat history to the AI would exceed token limits on long conversations and increase cost linearly. 20 messages is enough context for coherent responses.
+**Redis cache on RAG queries** — the same question asked twice does not hit the AI model twice. Cache hits return in under 30ms.
+
+**Ownership checks on every operation** — multi-tenant isolation enforced at every service method. A user cannot access another user's data regardless of what they pass in the request.
+
+**Soft delete** — no data is hard deleted. Chats and documents use a deletedAt timestamp for audit trails.
 
 ---
 
 ## Environment Variables
 
-See `.env.example` for the full list of required variables.
+See `.env.example` for the full list.
+
+---
+
+## License
+
+MIT
+
+
+
+
+
+
