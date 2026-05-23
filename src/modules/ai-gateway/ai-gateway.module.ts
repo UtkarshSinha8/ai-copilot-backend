@@ -6,5 +6,7 @@ import { AiGatewayService } from './ai-gateway.service';
   providers: [AiGatewayService],
   // export so ChatModule can inject AiGatewayService
   exports: [AiGatewayService],
+  
+
 })
 export class AiGatewayModule {}
