@@ -17,6 +17,9 @@ services:
 
     restart: always
 
+    networks:
+      - ai_copilot_network
+
   postgres:
     image: pgvector/pgvector:pg16
 
@@ -35,6 +38,9 @@ services:
 
     restart: always
 
+    networks:
+      - ai_copilot_network
+
   redis:
     image: redis:7-alpine
 
@@ -45,5 +51,11 @@ services:
 
     restart: always
 
+    networks:
+      - ai_copilot_network
+
 volumes:
   postgres_data:
+
+networks:
+  ai_copilot_network:
