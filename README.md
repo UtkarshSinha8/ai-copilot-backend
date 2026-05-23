@@ -25,27 +25,25 @@ With RAG:     User asks "what is our refund policy?"
 ## Live Demo
 
 ### Document Upload — queued for background processing instantly
-![Document Upload](<img width="1121" height="670" alt="chat_response" src="https://github.com/user-attachments/assets/d5241c57-aac1-4423-b737-2663007ea568" />)
+![Document Upload](https://github.com/user-attachments/assets/d5241c57-aac1-4423-b737-2663007ea568 )
 
 ### RAG Pipeline — first query hits vector search, retrieves 5 chunks
-![RAG Response](<img width="735" height="531" alt="EC2_instance_deployed" src="https://github.com/user-attachments/assets/202577eb-f47f-4f5e-bad2-6ce651155ab7" />
-)
+![RAG Response](https://github.com/user-attachments/assets/202577eb-f47f-4f5e-bad2-6ce651155ab7)
 
 ### Redis Cache Hit — same question returns in 24ms from cache
-![Cache Hit](<img width="1364" height="641" alt="queue_processing" src="https://github.com/user-attachments/assets/534d1f62-d99e-4088-bb17-214d6f1911c3" />)
+![Cache Hit](https://github.com/user-attachments/assets/534d1f62-d99e-4088-bb17-214d6f1911c3")
 
 ### Streaming AI Response — tokens arrive in real time via SSE
-![Streaming](<img width="647" height="389" alt="pgvector Verification" src="https://github.com/user-attachments/assets/253ed233-db4d-457a-b8da-095740c0aa36" />)
+![Streaming](https://github.com/user-attachments/assets/253ed233-db4d-457a-b8da-095740c0aa36")
 
 ### pgvector  table creation and embedding storage confirmation
-![pgvector](<img width="1083" height="659" alt="cache_true" src="https://github.com/user-attachments/assets/0848e97d-48b4-497a-9b51-428c4e469730" />)
+![pgvector](https://github.com/user-attachments/assets/0848e97d-48b4-497a-9b51-428c4e469730")
 
 ### AWS EC2 — deployed and running at 51.20.193.203
-![EC2 Instance](<img width="1285" height="169" alt="docker_container" src="https://github.com/user-attachments/assets/623e8322-4796-4212-b06a-f49469fb94db" />)
+![EC2 Instance](https://github.com/user-attachments/assets/623e8322-4796-4212-b06a-f49469fb94db")
 
 ### Docker Containers on EC2 — all three services up
-![Docker Containers](<img width="1102" height="727" alt="chat_stream" src="https://github.com/user-attachments/assets/faf606c1-fce2-4003-bdab-91d46c82825f" />
-)
+![Docker Containers](https://github.com/user-attachments/assets/faf606c1-fce2-4003-bdab-91d46c82825f")
 
 ---
 
