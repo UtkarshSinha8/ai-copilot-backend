@@ -27,10 +27,7 @@ export class ChatController {
 
   // POST /api/chats — create new chat session
   @Post()
-  createChat(
-    @CurrentUser() user: any,
-    @Body() createChatDto: CreateChatDto,
-  ) {
+  createChat(@CurrentUser() user: any, @Body() createChatDto: CreateChatDto) {
     return this.chatService.createChat(user.id, createChatDto);
   }
 
@@ -42,19 +39,13 @@ export class ChatController {
 
   // GET /api/chats/:id — get single chat with messages
   @Get(':id')
-  getChatWithMessages(
-    @Param('id') chatId: string,
-    @CurrentUser() user: any,
-  ) {
+  getChatWithMessages(@Param('id') chatId: string, @CurrentUser() user: any) {
     return this.chatService.getChatWithMessages(chatId, user.id);
   }
 
   // GET /api/chats/:id/history — get message history only
   @Get(':id/history')
-  getChatHistory(
-    @Param('id') chatId: string,
-    @CurrentUser() user: any,
-  ) {
+  getChatHistory(@Param('id') chatId: string, @CurrentUser() user: any) {
     return this.chatService.getChatHistory(chatId, user.id);
   }
 
@@ -71,10 +62,7 @@ export class ChatController {
   // DELETE /api/chats/:id — soft delete chat
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteChat(
-    @Param('id') chatId: string,
-    @CurrentUser() user: any,
-  ) {
+  deleteChat(@Param('id') chatId: string, @CurrentUser() user: any) {
     return this.chatService.deleteChat(chatId, user.id);
   }
 

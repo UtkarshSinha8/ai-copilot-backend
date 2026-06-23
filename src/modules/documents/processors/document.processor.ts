@@ -1,7 +1,4 @@
-import {
-  Processor,
-  WorkerHost,
-} from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 
 import { Job } from 'bullmq';
 
@@ -11,37 +8,19 @@ import { DocumentsService } from '../documents.service';
 
 @Processor('document-processing')
 export class DocumentProcessor extends WorkerHost {
-  private readonly logger = new Logger(
-    DocumentProcessor.name,
-  );
+  private readonly logger = new Logger(DocumentProcessor.name);
 
-  constructor(
-    private readonly documentsService: DocumentsService,
-  ) {
+  constructor(private readonly documentsService: DocumentsService) {
     super();
   }
 
-  async process(
-    job: Job<any>,
-  ): Promise<void> {
-    this.logger.log(
-      `Processing document job: ${job.id}`,
-    );
+  async process(job: Job<any>): Promise<void> {
+    this.logger.log(`Processing document job: ${job.id}`);
 
-    const {
-      file,
-      userId,
-      documentId,
-    } = job.data;
+    const { file, userId, documentId } = job.data;
 
-    await this.documentsService.processDocument(
-      file,
-      userId,
-      documentId,
-    );
+    await this.documentsService.processDocument(file, userId, documentId);
 
-    this.logger.log(
-      `Completed document job: ${job.id}`,
-    );
+    this.logger.log(`Completed document job: ${job.id}`);
   }
 }

@@ -126,7 +126,6 @@ export class AiGatewayService {
             this.logger.error('Stream error:', err.message);
             subscriber.error(err);
           });
-
         } catch (error: any) {
           this.logger.error('AI Gateway error:', error.message);
           subscriber.error(error);
@@ -167,7 +166,6 @@ export class AiGatewayService {
 
       // extract text from standard OpenAI response format
       return response.data?.choices?.[0]?.message?.content || '';
-
     } catch (error: any) {
       this.logger.error('AI Gateway non-stream error:', error.message);
       throw error;

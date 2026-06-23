@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class TextChunkerService {
-  chunkText(
-    text: string,
-    chunkSize = 1000,
-    overlap = 200,
-  ): string[] {
+  chunkText(text: string, chunkSize = 1000, overlap = 200): string[] {
     const chunks: string[] = [];
 
     let start = 0;

@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 import axios from 'axios';
 
@@ -13,23 +10,13 @@ export class EmbeddingsService {
 
   private readonly baseUrl: string;
 
-  constructor(
-    private readonly configService: ConfigService,
-  ) {
-    this.apiKey =
-      this.configService.get<string>(
-        'openrouter.apiKey',
-      ) || '';
+  constructor(private readonly configService: ConfigService) {
+    this.apiKey = this.configService.get<string>('openrouter.apiKey') || '';
 
-    this.baseUrl =
-      this.configService.get<string>(
-        'openrouter.baseUrl',
-      ) || '';
+    this.baseUrl = this.configService.get<string>('openrouter.baseUrl') || '';
   }
 
-  async generateEmbedding(
-    text: string,
-  ): Promise<number[]> {
+  async generateEmbedding(text: string): Promise<number[]> {
     try {
       const response = await axios.post(
         `${this.baseUrl}/embeddings`,
@@ -47,14 +34,9 @@ export class EmbeddingsService {
 
       return response.data.data[0].embedding;
     } catch (error) {
-      console.error(
-        'Embedding generation failed:',
-        error,
-      );
+      console.error('Embedding generation failed:', error);
 
-      throw new InternalServerErrorException(
-        'Failed to generate embedding',
-      );
+      throw new InternalServerErrorException('Failed to generate embedding');
     }
   }
 }

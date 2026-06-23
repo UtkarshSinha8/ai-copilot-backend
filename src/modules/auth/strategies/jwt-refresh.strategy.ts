@@ -7,7 +7,10 @@ import { UsersService } from '../../users/users.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(
     configService: ConfigService,
     private usersService: UsersService,
@@ -15,12 +18,17 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     super({
       jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('jwt.refreshSecret') || 'fallback_refresh_secret',
+      secretOrKey:
+        configService.get<string>('jwt.refreshSecret') ||
+        'fallback_refresh_secret',
       passReqToCallback: true as const,
     });
   }
 
-  async validate(req: Request, payload: { sub: string; email: string; role: string }) {
+  async validate(
+    req: Request,
+    payload: { sub: string; email: string; role: string },
+  ) {
     const { refreshToken } = req.body;
     const user = await this.usersService.findOne(payload.sub);
 

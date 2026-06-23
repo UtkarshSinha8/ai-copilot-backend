@@ -6,10 +6,7 @@ const pdfParse = require('pdf-parse');
 
 @Injectable()
 export class DocumentParserService {
-  async extractText(
-    filePath: string,
-    fileType: string,
-  ): Promise<string> {
+  async extractText(filePath: string, fileType: string): Promise<string> {
     switch (fileType) {
       case 'txt':
         return this.extractTxtText(filePath);
@@ -21,26 +18,17 @@ export class DocumentParserService {
         return this.extractDocxText(filePath);
 
       default:
-        throw new Error(
-          `Unsupported file type: ${fileType}`,
-        );
+        throw new Error(`Unsupported file type: ${fileType}`);
     }
   }
 
-  private async extractTxtText(
-    filePath: string,
-  ): Promise<string> {
-    const text = await fs.readFile(
-      filePath,
-      'utf-8',
-    );
+  private async extractTxtText(filePath: string): Promise<string> {
+    const text = await fs.readFile(filePath, 'utf-8');
 
     return this.normalizeText(text);
   }
 
-  private async extractPdfText(
-    filePath: string,
-  ): Promise<string> {
+  private async extractPdfText(filePath: string): Promise<string> {
     const buffer = await fs.readFile(filePath);
 
     const data = await pdfParse(buffer);
@@ -48,13 +36,8 @@ export class DocumentParserService {
     return this.normalizeText(data.text);
   }
 
-  private async extractDocxText(
-    filePath: string,
-  ): Promise<string> {
-    const text = await fs.readFile(
-      filePath,
-      'utf-8',
-    );
+  private async extractDocxText(filePath: string): Promise<string> {
+    const text = await fs.readFile(filePath, 'utf-8');
 
     return this.normalizeText(text);
   }

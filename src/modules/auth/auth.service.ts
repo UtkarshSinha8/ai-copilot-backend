@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -46,7 +43,10 @@ export class AuthService {
       throw new UnauthorizedException('Account is inactive');
     }
 
-    const passwordMatches = await bcrypt.compare(loginDto.password, user.password);
+    const passwordMatches = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
 
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials');
@@ -83,10 +83,14 @@ export class AuthService {
   private async generateTokens(userId: string, email: string, role: string) {
     const payload = { sub: userId, email, role };
 
-    const accessSecret = this.configService.get<string>('jwt.accessSecret') || 'access_secret';
-    const refreshSecret = this.configService.get<string>('jwt.refreshSecret') || 'refresh_secret';
-    const accessExpiry = this.configService.get<string>('jwt.accessExpiresIn') || '15m';
-    const refreshExpiry = this.configService.get<string>('jwt.refreshExpiresIn') || '7d';
+    const accessSecret =
+      this.configService.get<string>('jwt.accessSecret') || 'access_secret';
+    const refreshSecret =
+      this.configService.get<string>('jwt.refreshSecret') || 'refresh_secret';
+    const accessExpiry =
+      this.configService.get<string>('jwt.accessExpiresIn') || '15m';
+    const refreshExpiry =
+      this.configService.get<string>('jwt.refreshExpiresIn') || '7d';
 
     // sign access token — short lived 15 minutes
     const accessToken = await this.jwtService.signAsync(payload, {

@@ -13,30 +13,29 @@ import { BullModule } from '@nestjs/bullmq';
 import { DocumentProcessor } from './processors/document.processor';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Document, DocumentChunk]), AiGatewayModule, CommonModule,
-   BullModule.registerQueue({
-  name: 'document-processing',
+  imports: [
+    TypeOrmModule.forFeature([Document, DocumentChunk]),
+    AiGatewayModule,
+    CommonModule,
+    BullModule.registerQueue({
+      name: 'document-processing',
 
-  connection: {
-    host:
-      process.env.REDIS_HOST ||
-      'localhost',
+      connection: {
+        host: process.env.REDIS_HOST || 'localhost',
 
-    port: parseInt(
-      process.env.REDIS_PORT ||
-        '6379',
-    ),
-  },
-} as any),],
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+      },
+    }),
+  ],
   controllers: [DocumentsController],
-  providers: [DocumentsService,
-     DocumentParserService,
+  providers: [
+    DocumentsService,
+    DocumentParserService,
     TextChunkerService,
     EmbeddingsService,
     DocumentProcessor,
-    
   ],
-  
+
   exports: [DocumentsService],
 })
 export class DocumentsModule {}

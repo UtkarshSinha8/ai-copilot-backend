@@ -27,13 +27,9 @@ export class DocumentChunk {
   @Column()
   documentId!: string;
 
-  @ManyToOne(
-    () => Document,
-    (document) => document.chunks,
-    {
-      onDelete: 'CASCADE',
-    },
-  )
+  @ManyToOne(() => Document, (document) => document.chunks, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'documentId' })
   document!: Document;
 

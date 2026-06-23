@@ -72,7 +72,10 @@ export class Message {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToOne(() => Chat, (chat) => chat.messages, { onDelete: 'CASCADE', eager: false })
+  @ManyToOne(() => Chat, (chat) => chat.messages, {
+    onDelete: 'CASCADE',
+    eager: false,
+  })
   @JoinColumn({ name: 'chatId' })
   chat!: Chat;
 

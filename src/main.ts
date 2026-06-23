@@ -10,16 +10,16 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted:true,
-      transform:true,
-    })
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
   );
-   app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
-    app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new ResponseInterceptor());
   app.enableCors({
-    origin:process.env.FRONTEND_URL || '*',
-    credentials:true
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true,
   });
   const port = process.env.PORT || 3000;
   await app.listen(port);

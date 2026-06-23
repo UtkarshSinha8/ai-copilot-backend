@@ -21,9 +21,7 @@ import { SearchDocumentsDto } from './dto/search-documents.dto';
 import { AskQuestionDto } from './dto/ask-question.dto';
 @Controller('documents')
 export class DocumentsController {
-  constructor(
-    private readonly documentsService: DocumentsService,
-  ) {}
+  constructor(private readonly documentsService: DocumentsService) {}
 
   @Post('upload')
   @UseGuards(JwtAuthGuard)
@@ -33,8 +31,7 @@ export class DocumentsController {
         destination: './uploads',
 
         filename: (req, file, callback) => {
-          const uniqueName =
-            Date.now() + '-' + file.originalname;
+          const uniqueName = Date.now() + '-' + file.originalname;
 
           callback(null, uniqueName);
         },
@@ -46,34 +43,25 @@ export class DocumentsController {
 
     @CurrentUser() user: any,
   ) {
-    return this.documentsService.uploadDocument(
-      file,
-      user.id,
-    );
+    return this.documentsService.uploadDocument(file, user.id);
   }
 
   @Post('search')
-@UseGuards(JwtAuthGuard)
-async searchDocuments(
-  @Body() dto: SearchDocumentsDto,
+  @UseGuards(JwtAuthGuard)
+  async searchDocuments(
+    @Body() dto: SearchDocumentsDto,
 
-  @CurrentUser() user: any,
-) {
-  return this.documentsService.semanticSearch(
-    dto.query,
-    user.id,
-  );
-}
-@Post('ask')
-@UseGuards(JwtAuthGuard)
-async askQuestion(
-  @Body() dto: AskQuestionDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.documentsService.semanticSearch(dto.query, user.id);
+  }
+  @Post('ask')
+  @UseGuards(JwtAuthGuard)
+  async askQuestion(
+    @Body() dto: AskQuestionDto,
 
-  @CurrentUser() user: any,
-) {
-  return this.documentsService.askQuestion(
-    dto.question,
-    user.id,
-  );
-}
+    @CurrentUser() user: any,
+  ) {
+    return this.documentsService.askQuestion(dto.question, user.id);
+  }
 }

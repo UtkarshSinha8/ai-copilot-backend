@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -34,20 +31,15 @@ export class DocumentsService {
     private readonly aiGatewayService: AiGatewayService,
     private readonly cacheService: CacheService,
     @InjectQueue('document-processing')
-private readonly documentQueue: Queue,
+    private readonly documentQueue: Queue,
   ) {}
 
-  async semanticSearch(
-  query: string,
-  userId: string,
-) {
-  const queryEmbedding =
-    await this.embeddingsService.generateEmbedding(
-      query,
-    );
+  async semanticSearch(query: string, userId: string) {
+    const queryEmbedding =
+      await this.embeddingsService.generateEmbedding(query);
 
-  const result = await this.chunksRepository.query(
-    `
+    const result = await this.chunksRepository.query(
+      `
     SELECT
       id,
       content,
@@ -60,40 +52,24 @@ private readonly documentQueue: Queue,
     ORDER BY embedding <=> $1::vector
     LIMIT 5
     `,
-    [JSON.stringify(queryEmbedding), userId],
-  );
-
-  return result;
-}
-
-  async uploadDocument(
-  file: Express.Multer.File,
-  userId: string,
-) {
-  if (!file) {
-    throw new BadRequestException(
-      'File is required',
+      [JSON.stringify(queryEmbedding), userId],
     );
+
+    return result;
   }
 
-  const fileExtension = file.originalname
-    .split('.')
-    .pop()
-    ?.toLowerCase();
+  async uploadDocument(file: Express.Multer.File, userId: string) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
 
-  if (
-    !fileExtension ||
-    !['pdf', 'txt', 'docx'].includes(
-      fileExtension,
-    )
-  ) {
-    throw new BadRequestException(
-      'Unsupported file type',
-    );
-  }
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
 
-  const document =
-    this.documentsRepository.create({
+    if (!fileExtension || !['pdf', 'txt', 'docx'].includes(fileExtension)) {
+      throw new BadRequestException('Unsupported file type');
+    }
+
+    const document = this.documentsRepository.create({
       originalName: file.originalname,
       storedName: file.filename,
       filePath: file.path,
@@ -103,65 +79,45 @@ private readonly documentQueue: Queue,
       userId,
     } as any);
 
-  const savedDocument =
-    await this.documentsRepository.save(
-      document,
-    );
+    const savedDocument = await this.documentsRepository.save(document);
 
-  const savedDocumentEntity =
-    Array.isArray(savedDocument)
+    const savedDocumentEntity = Array.isArray(savedDocument)
       ? savedDocument[0]
       : savedDocument;
 
-  await this.documentQueue.add(
-    'process-document',
-    {
+    await this.documentQueue.add('process-document', {
       file,
       userId,
-      documentId:
-        savedDocumentEntity.id,
-    },
-  );
+      documentId: savedDocumentEntity.id,
+    });
 
-  return {
-    success: true,
-    message:
-      'Document uploaded and queued for processing',
-    documentId:
-      savedDocumentEntity.id,
-    status: 'processing',
-  };
-}
-  async askQuestion(
-  
-  question: string,
-  userId: string,
-) 
-{
-  const cacheKey = `rag:${userId}:${question}`;
+    return {
+      success: true,
+      message: 'Document uploaded and queued for processing',
+      documentId: savedDocumentEntity.id,
+      status: 'processing',
+    };
+  }
+  async askQuestion(question: string, userId: string) {
+    const cacheKey = `rag:${userId}:${question}`;
 
-const cachedAnswer =
-  await this.cacheService.get(cacheKey);
+    const cachedAnswer = await this.cacheService.get(cacheKey);
 
-if (cachedAnswer) {
-  return {
-    question,
-    answer: cachedAnswer,
-    retrievedChunks: 0,
-    cached: true,
-  };
-}
-  const relevantChunks =
-    await this.semanticSearch(
-      question,
-      userId,
-    );
+    if (cachedAnswer) {
+      return {
+        question,
+        answer: cachedAnswer,
+        retrievedChunks: 0,
+        cached: true,
+      };
+    }
+    const relevantChunks = await this.semanticSearch(question, userId);
 
-  const context = relevantChunks
-    .map((chunk: any) => chunk.content)
-    .join('\n\n');
+    const context = relevantChunks
+      .map((chunk: any) => chunk.content)
+      .join('\n\n');
 
-  const prompt = `
+    const prompt = `
 You are an AI Operations Copilot.
 
 Use the provided context as the PRIMARY source of truth.
@@ -182,123 +138,85 @@ ${question}
 ANSWER:
 `;
 
-  const response =
-  await this.aiGatewayService.chat(
-    [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-    'openai/gpt-3.5-turbo',
-  );
+    const response = await this.aiGatewayService.chat(
+      [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      'openai/gpt-3.5-turbo',
+    );
 
-  await this.cacheService.set(
-  cacheKey,
-  response,
-  3600,
-);
+    await this.cacheService.set(cacheKey, response, 3600);
 
-return {
-  question,
-  answer: response,
-  retrievedChunks: relevantChunks.length,
-  cached: false,
-};
-}
-async processDocument(
-  file: Express.Multer.File,
-  userId: string,
-  documentId: string,
-) {
-  const savedDocument =
-    await this.documentsRepository.findOne({
+    return {
+      question,
+      answer: response,
+      retrievedChunks: relevantChunks.length,
+      cached: false,
+    };
+  }
+  async processDocument(
+    file: Express.Multer.File,
+    userId: string,
+    documentId: string,
+  ) {
+    const savedDocument = await this.documentsRepository.findOne({
       where: {
         id: documentId,
       },
     });
 
-  if (!savedDocument) {
-    throw new Error(
-      'Document not found',
-    );
-  }
+    if (!savedDocument) {
+      throw new Error('Document not found');
+    }
 
-  const fileExtension =
-    file.originalname
-      .split('.')
-      .pop()
-      ?.toLowerCase() || 'txt';
+    const fileExtension =
+      file.originalname.split('.').pop()?.toLowerCase() || 'txt';
 
-  try {
-    const extractedText =
-      await this.parserService.extractText(
+    try {
+      const extractedText = await this.parserService.extractText(
         file.path,
         fileExtension,
       );
 
-    const chunks =
-      this.chunkerService.chunkText(
-        extractedText,
-      );
+      const chunks = this.chunkerService.chunkText(extractedText);
 
-    const chunkEntities: DocumentChunk[] =
-      [];
+      const chunkEntities: DocumentChunk[] = [];
 
-    for (
-      let index = 0;
-      index < chunks.length;
-      index++
-    ) {
-      const chunk = chunks[index];
+      for (let index = 0; index < chunks.length; index++) {
+        const chunk = chunks[index];
 
-      const embedding =
-        await this.embeddingsService.generateEmbedding(
-          chunk,
-        );
+        const embedding = await this.embeddingsService.generateEmbedding(chunk);
 
-      const chunkEntity =
-        this.chunksRepository.create({
-          documentId:
-            savedDocument.id,
+        const chunkEntity = this.chunksRepository.create({
+          documentId: savedDocument.id,
           content: chunk,
           chunkIndex: index,
           userId,
           embedding,
         });
 
-      chunkEntities.push(
-        chunkEntity,
-      );
+        chunkEntities.push(chunkEntity);
+      }
+
+      await this.chunksRepository.save(chunkEntities);
+
+      savedDocument.chunkCount = chunks.length;
+
+      savedDocument.status = 'completed' as any;
+
+      await this.documentsRepository.save(savedDocument);
+    } catch (error) {
+      savedDocument.status = 'failed' as any;
+
+      savedDocument.errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
+      await this.documentsRepository.save(savedDocument);
+
+      throw error;
     }
-
-    await this.chunksRepository.save(
-      chunkEntities,
-    );
-
-    savedDocument.chunkCount =
-      chunks.length;
-
-    savedDocument.status =
-      'completed' as any;
-
-    await this.documentsRepository.save(
-      savedDocument,
-    );
-  } catch (error) {
-    savedDocument.status =
-      'failed' as any;
-
-    savedDocument.errorMessage =
-      error instanceof Error
-        ? error.message
-        : 'Unknown error';
-
-    await this.documentsRepository.save(
-      savedDocument,
-    );
-
-    throw error;
   }
-}
 }

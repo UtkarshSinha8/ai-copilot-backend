@@ -14,10 +14,10 @@ import { DocumentChunk } from './document-chunk.entity';
 
 // document processing status — tracks where in the pipeline the document is
 export enum DocumentStatus {
-  PENDING = 'pending',       // just uploaded, not processed yet
+  PENDING = 'pending', // just uploaded, not processed yet
   PROCESSING = 'processing', // currently being chunked and embedded
-  COMPLETED = 'completed',   // fully processed, ready for RAG queries
-  FAILED = 'failed',         // processing failed — check errorMessage
+  COMPLETED = 'completed', // fully processed, ready for RAG queries
+  FAILED = 'failed', // processing failed — check errorMessage
 }
 
 // supported file types — we validate against this on upload
@@ -35,11 +35,8 @@ export class Document {
   // original filename the user uploaded — for display purposes
   @Column()
   originalName!: string;
-  @OneToMany(
-  () => DocumentChunk,
-  (chunk) => chunk.document,
-)
-chunks!: DocumentChunk[];
+  @OneToMany(() => DocumentChunk, (chunk) => chunk.document)
+  chunks!: DocumentChunk[];
 
   // stored filename — uuid based to avoid collisions and path traversal attacks
   @Column()
@@ -47,7 +44,7 @@ chunks!: DocumentChunk[];
 
   // full path on disk where file is stored
   @Column()
-  filePath! : string;
+  filePath!: string;
 
   // file size in bytes — useful for storage quota enforcement later
   @Column()

@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -7,40 +13,39 @@ export enum UserRole {
 
 @Entity('users')
 export class User {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @Column()
-    firstName!: string;
+  @Column()
+  firstName!: string;
 
-    @Column()
-    lastName!: string;
+  @Column()
+  lastName!: string;
 
-    @Column({ unique: true }) 
-    email!: string;
+  @Column({ unique: true })
+  email!: string;
 
-    @Column()
-    password!: string;
+  @Column()
+  password!: string;
 
-    @Column({
-        type:'enum',
-        enum: UserRole,
-        default: UserRole.USER,
-    })
-    role!: UserRole;
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role!: UserRole;
 
-    @Column({default:true})
-    //Instead of deleting the user, we toggle their status so if we want to remove a user or a user want to delete he can be inactive but all its data is not deleted
-    //soft deleting
-    isActive!: boolean;
+  @Column({ default: true })
+  //Instead of deleting the user, we toggle their status so if we want to remove a user or a user want to delete he can be inactive but all its data is not deleted
+  //soft deleting
+  isActive!: boolean;
 
+  @Column({ type: 'text', nullable: true, default: null })
+  refreshToken!: string | null;
 
-    @Column({type: 'text', nullable: true, default: null})
-    refreshToken!: string | null;
+  @CreateDateColumn()
+  createdAt!: Date;
 
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

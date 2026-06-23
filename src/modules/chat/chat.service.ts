@@ -26,12 +26,15 @@ export class ChatService {
   ) {}
 
   // create a new chat session for the authenticated user
-  async createChat(userId: string, createChatDto: CreateChatDto): Promise<Chat> {
+  async createChat(
+    userId: string,
+    createChatDto: CreateChatDto,
+  ): Promise<Chat> {
     const chat = this.chatRepository.create({
       title: createChatDto.title || 'New Chat',
       model: createChatDto.model || 'openai/gpt-4o',
       // userId set via RelationId — we set the relation by passing user id
-      user: { id: userId } as any,
+      user: { id: userId },
     });
 
     return this.chatRepository.save(chat);
@@ -67,7 +70,6 @@ export class ChatService {
     return chat;
   }
 
-  // update chat title or isActive status
   async updateChat(
     chatId: string,
     userId: string,
@@ -78,15 +80,12 @@ export class ChatService {
     return this.chatRepository.save(chat);
   }
 
-  // soft delete — sets deletedAt timestamp, row stays in DB
   async deleteChat(chatId: string, userId: string): Promise<void> {
     const chat = await this.getChatById(chatId, userId);
     await this.chatRepository.softDelete(chat.id);
   }
 
-  // get chat history — returns messages array for a chat
   async getChatHistory(chatId: string, userId: string): Promise<Message[]> {
-    // verify ownership before returning messages
     await this.getChatById(chatId, userId);
 
     return this.messageRepository.find({
@@ -106,25 +105,22 @@ export class ChatService {
 
     // save user message to DB first
     const userMessage = this.messageRepository.create({
-      chat: { id: chatId } as any,
+      chat: { id: chatId },
       role: MessageRole.USER,
       content: sendMessageDto.content,
-      // user messages don't consume tokens — set model as 'user'
+
       model: 'user',
       promptTokens: 0,
       completionTokens: 0,
     });
     await this.messageRepository.save(userMessage);
 
-    // fetch last 20 messages as context — avoids sending entire history
-    // which would exceed token limits on long conversations
     const recentMessages = await this.messageRepository.find({
       where: { chat: { id: chatId } as any },
       order: { createdAt: 'ASC' },
       take: 20,
     });
 
-    // format messages for OpenRouter API — role + content pairs
     const formattedMessages = recentMessages.map((msg) => ({
       role: msg.role,
       content: msg.content,
@@ -132,17 +128,10 @@ export class ChatService {
 
     const model = sendMessageDto.model || chat.model;
 
-    // get streaming observable from AI gateway
-    const stream$ = this.aiGatewayService.streamChat(
-      formattedMessages,
-      model,
-    );
+    const stream$ = this.aiGatewayService.streamChat(formattedMessages, model);
 
-    // save assistant response after streaming completes
-    // we collect the full response in the controller and save it
     this.saveAssistantMessage(chatId, model, stream$);
 
-    // auto-generate title from first user message if still 'New Chat'
     if (chat.title === 'New Chat') {
       const autoTitle = sendMessageDto.content.substring(0, 50);
       await this.chatRepository.update(chatId, { title: autoTitle });
@@ -159,13 +148,14 @@ export class ChatService {
   ): Promise<void> {
     let fullContent = '';
 
-    // subscribe to collect all chunks into one string
     stream$.subscribe({
-      next: (chunk) => { fullContent += chunk; },
+      next: (chunk) => {
+        fullContent += chunk;
+      },
       complete: async () => {
         // save complete assistant response to DB
         const assistantMessage = this.messageRepository.create({
-          chat: { id: chatId } as any,
+          chat: { id: chatId },
           role: MessageRole.ASSISTANT,
           content: fullContent,
           model,
@@ -180,10 +170,9 @@ export class ChatService {
     });
   }
 
-  // private helper — gets chat by id and verifies ownership
   private async getChatById(chatId: string, userId: string): Promise<Chat> {
     const chat = await this.chatRepository.findOne({
-      where: { id: chatId } as any,
+      where: { id: chatId },
     });
 
     if (!chat) {

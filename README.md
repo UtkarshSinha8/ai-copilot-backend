@@ -25,25 +25,25 @@ With RAG:     User asks "what is our refund policy?"
 ## Live Demo
 
 ### Document Upload — queued for background processing instantly
-![Document Upload](https://github.com/user-attachments/assets/534d1f62-d99e-4088-bb17-214d6f1911c3)
+![Document Upload](assets/screenshots/document-upload.png)
 
 ### RAG Pipeline — first query hits vector search, retrieves 5 chunks
-![Document Upload](https://github.com/user-attachments/assets/d5241c57-aac1-4423-b737-2663007ea568)
+![RAG Response](assets/screenshots/rag-response.png)
 
 ### Redis Cache Hit — same question returns in 24ms from cache
-![Document Upload](https://github.com/user-attachments/assets/0848e97d-48b4-497a-9b51-428c4e469730)
+![Cache Hit](assets/screenshots/cache-hit.png)
 
 ### Streaming AI Response — tokens arrive in real time via SSE
-![Document Upload](https://github.com/user-attachments/assets/faf606c1-fce2-4003-bdab-91d46c82825f)
+![Streaming](assets/screenshots/streaming.png)
 
-### pgvector  table creation and embedding storage confirmation
-![Document Upload](https://github.com/user-attachments/assets/253ed233-db4d-457a-b8da-095740c0aa36)
+### pgvector — embeddings stored and queried in PostgreSQL
+![pgvector](assets/screenshots/tables.png)
 
 ### AWS EC2 — deployed and running at 51.20.193.203
-![Document Upload](https://github.com/user-attachments/assets/202577eb-f47f-4f5e-bad2-6ce651155ab7)
+![EC2 Instance](assets/screenshots/ec2-instance.png)
 
 ### Docker Containers on EC2 — all three services up
-![Document Upload](https://github.com/user-attachments/assets/623e8322-4796-4212-b06a-f49469fb94db)
+![Docker Containers](assets/screenshots/docker-containers.png)
 
 ---
 
@@ -230,9 +230,3 @@ See `.env.example` for the full list.
 ## License
 
 MIT
-
-
-
-
-
-
