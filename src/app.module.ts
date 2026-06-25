@@ -56,11 +56,16 @@ import openrouterConfig from './config/openrouter.config';
     AiGatewayModule,
     DocumentsModule,
     BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-      },
-    } as any),
+  connection:
+    process.env.NODE_ENV === 'production'
+      ? {
+          url: process.env.REDIS_URL,
+        }
+      : {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+        },
+} as any),
   ],
 })
 export class AppModule {}
