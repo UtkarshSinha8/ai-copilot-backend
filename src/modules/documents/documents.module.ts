@@ -18,14 +18,8 @@ import { DocumentProcessor } from './processors/document.processor';
     AiGatewayModule,
     CommonModule,
     BullModule.registerQueue({
-      name: 'document-processing',
-
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-      },
-    }),
+  name: 'document-processing',
+}),
   ],
   controllers: [DocumentsController],
   providers: [
