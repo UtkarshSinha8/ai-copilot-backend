@@ -41,15 +41,17 @@ export class DocumentsService {
     const result = await this.chunksRepository.query(
       `
     SELECT
-      id,
-      content,
-      "documentId",
-      "chunkIndex",
-      embedding <=> $1::vector AS distance
-    FROM document_chunks
-    WHERE "userId" = $2
-      AND embedding IS NOT NULL
-    ORDER BY embedding <=> $1::vector
+      c.id,
+      c.content,
+      c."documentId",
+      c."chunkIndex",
+      d."originalName" AS "documentName",
+      c.embedding <=> $1::vector AS distance
+    FROM document_chunks c
+    LEFT JOIN documents d ON c."documentId" = d.id
+    WHERE c."userId" = $2
+      AND c.embedding IS NOT NULL
+    ORDER BY c.embedding <=> $1::vector
     LIMIT 5
     `,
       [JSON.stringify(queryEmbedding), userId],
@@ -98,44 +100,115 @@ export class DocumentsService {
       status: 'processing',
     };
   }
+
+  async getDocuments(userId: string) {
+    return this.documentsRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async askQuestion(question: string, userId: string) {
     const cacheKey = `rag:${userId}:${question}`;
 
-    const cachedAnswer = await this.cacheService.get(cacheKey);
+    const cachedResultStr = await this.cacheService.get(cacheKey);
 
-    if (cachedAnswer) {
-      return {
-        question,
-        answer: cachedAnswer,
-        retrievedChunks: 0,
-        cached: true,
-      };
+    if (cachedResultStr) {
+      try {
+        const cachedObj = JSON.parse(cachedResultStr);
+        return {
+          question,
+          answer: cachedObj.answer,
+          retrievedChunks: cachedObj.retrievedChunks || 0,
+          sources: cachedObj.sources || [],
+          cached: true,
+        };
+      } catch (e) {
+        // Fallback if cache gets corrupted or was raw string
+        return {
+          question,
+          answer: cachedResultStr,
+          retrievedChunks: 0,
+          sources: [],
+          cached: true,
+        };
+      }
     }
     const relevantChunks = await this.semanticSearch(question, userId);
 
     const context = relevantChunks
-      .map((chunk: any) => chunk.content)
-      .join('\n\n');
+  .map(
+    (chunk: any, index: number) => `
+Source ${index + 1}
+Document: ${chunk.documentName}
+Chunk: ${chunk.chunkIndex}
+
+${chunk.content}
+`,
+  )
+  .join('\n\n----------------------------------------\n\n');
+
+    const sources = Array.from(
+      new Set(relevantChunks.map((chunk: any) => chunk.documentName || 'Unknown Document')),
+    );
 
     const prompt = `
-You are an AI Operations Copilot.
+You are an intelligent AI Assistant designed to help users understand uploaded documents and answer their questions accurately.
 
-Use the provided context as the PRIMARY source of truth.
+The uploaded documents may include:
 
-If the context contains relevant information:
-- answer using the context
+- Software engineering projects
+- Source code
+- Technical documentation
+- School notes
+- Study material
+- Coaching content
+- Assignments
+- Reports
+- PDFs
+- Text documents
 
-If the context is insufficient:
-- answer using your general knowledge
-- but clearly separate inferred/general knowledge from retrieved context
+Your goal is to provide clear, accurate, and well-structured answers using the retrieved document context.
 
-CONTEXT:
+Rules:
+
+1. Use the retrieved context as the primary source of truth.
+
+2. If the answer exists in the retrieved context, answer using that information.
+
+3. If the retrieved context only partially answers the question, clearly mention what comes from the document and what comes from your own general knowledge.
+
+4. If the answer is not available in the retrieved context, say so before using general knowledge.
+
+5. Never fabricate information that appears to come from the uploaded documents.
+
+6. Adapt your explanation to the document type.
+
+• For software projects:
+  - Explain the overall architecture.
+  - Describe important modules and components.
+  - Explain APIs, authentication, databases, and workflows.
+  - Mention important files whenever possible.
+
+• For educational content:
+  - Explain concepts in simple language.
+  - Break complex topics into steps.
+  - Include examples whenever appropriate.
+  - Summarize important points.
+
+7. Use headings and bullet points whenever they improve readability.
+
+8. Keep answers concise unless the user explicitly asks for detailed explanations.
+
+Retrieved Context:
+
 ${context}
 
-USER QUESTION:
+User Question:
+
 ${question}
 
-ANSWER:
+Answer:
 `;
 
     const response = await this.aiGatewayService.chat(
@@ -148,12 +221,17 @@ ANSWER:
       'openai/gpt-3.5-turbo',
     );
 
-    await this.cacheService.set(cacheKey, response, 3600);
+    const result = {
+      answer: response,
+      retrievedChunks: relevantChunks.length,
+      sources,
+    };
+
+    await this.cacheService.set(cacheKey, JSON.stringify(result), 3600);
 
     return {
       question,
-      answer: response,
-      retrievedChunks: relevantChunks.length,
+      ...result,
       cached: false,
     };
   }

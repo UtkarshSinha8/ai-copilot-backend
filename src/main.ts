@@ -18,7 +18,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.enableCors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,
   });
   const port = process.env.PORT || 3000;

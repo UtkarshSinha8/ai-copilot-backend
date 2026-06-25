@@ -4,6 +4,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Get,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -22,6 +23,12 @@ import { AskQuestionDto } from './dto/ask-question.dto';
 @Controller('documents')
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getDocuments(@CurrentUser() user: any) {
+    return this.documentsService.getDocuments(user.id);
+  }
 
   @Post('upload')
   @UseGuards(JwtAuthGuard)
