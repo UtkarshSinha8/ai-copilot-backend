@@ -18,7 +18,7 @@ import openrouterConfig from './config/openrouter.config';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      
       load: [databaseConfig, jwtConfig, redisConfig, openrouterConfig],
     }),
 
