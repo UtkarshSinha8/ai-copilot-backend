@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-
 import Redis from 'ioredis';
 
 @Injectable()
@@ -7,10 +6,13 @@ export class CacheService {
   private readonly redis: Redis;
 
   constructor() {
-    this.redis = new Redis({
-      host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT),
-    });
+    this.redis =
+      process.env.NODE_ENV === 'production'
+        ? new Redis(process.env.REDIS_URL!)
+        : new Redis({
+            host: process.env.REDIS_HOST || 'localhost',
+            port: Number(process.env.REDIS_PORT || 6379),
+          });
   }
 
   async get(key: string): Promise<string | null> {
