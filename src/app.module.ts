@@ -7,7 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { AiGatewayModule } from './modules/ai-gateway/ai-gateway.module';
 import { DocumentsModule } from './modules/documents/documents.module';
-import { BullModule } from '@nestjs/bull';
+import { BullModule } from '@nestjs/bullmq';
 
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
