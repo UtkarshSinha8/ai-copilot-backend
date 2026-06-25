@@ -34,19 +34,24 @@ import openrouterConfig from './config/openrouter.config';
         console.log('DB_NAME:', configService.get('database.name'));
 
         return {
-          type: 'postgres' as const,
-          host: configService.get<string>('database.host'),
-          port: configService.get<number>('database.port'),
-          username: configService.get<string>('database.username'),
-          password: configService.get<string>('database.password'),
-          database: configService.get<string>('database.name'),
+  type: 'postgres',
+  host: configService.get<string>('database.host'),
+  port: configService.get<number>('database.port'),
+  username: configService.get<string>('database.username'),
+  password: configService.get<string>('database.password'),
+  database: configService.get<string>('database.name'),
 
-          autoLoadEntities: true,
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? {
+          rejectUnauthorized: false,
+        }
+      : false,
 
-          synchronize: true,
-
-          logging: process.env.NODE_ENV === 'development',
-        };
+  autoLoadEntities: true,
+  synchronize: true,
+  logging: process.env.NODE_ENV === 'development',
+};
       },
     }),
 
