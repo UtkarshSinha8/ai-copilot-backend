@@ -38,7 +38,7 @@ export class AiGatewayService {
     messages: ChatMessage[],
     model: string,
     temperature: number = 0.7,
-    maxTokens: number = 1000,
+    maxTokens: number = 700,
   ): Observable<string> {
     return new Observable<string>((subscriber) => {
       // immediately invoke async function inside Observable constructor
@@ -159,7 +159,7 @@ export class AiGatewayService {
     messages: ChatMessage[],
     model: string,
     temperature: number = 0.7,
-    maxTokens: number = 1000,
+    maxTokens: number = 700,
   ): Promise<string> {
     try {
       this.logger.log(`Non-streaming chat with model: ${model}`);
