@@ -31,7 +31,7 @@ export class Chat {
   @RelationId((chat: Chat) => chat.user)
   userId!: string;
 
-  @Column({ default: 'openai/gpt-4o' })
+  @Column({ default: 'deepseek/deepseek-r1:free' })
   model!: string;
 
   @Column({ default: true })

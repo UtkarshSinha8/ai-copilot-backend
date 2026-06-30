@@ -214,7 +214,7 @@ Answer:
           content: prompt,
         },
       ],
-      'openai/gpt-3.5-turbo',
+      'deepseek/deepseek-r1:free',
     );
 
     const result = {
