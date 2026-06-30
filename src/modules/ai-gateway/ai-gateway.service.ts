@@ -127,9 +127,20 @@ export class AiGatewayService {
             subscriber.error(err);
           });
         } catch (error: any) {
-          this.logger.error('AI Gateway error:', error.message);
-          subscriber.error(error);
-        }
+  this.logger.error('========== OPENROUTER ERROR ==========');
+  this.logger.error(`Model: ${model}`);
+  this.logger.error(`Status: ${error.response?.status}`);
+  this.logger.error(`Status Text: ${error.response?.statusText}`);
+  this.logger.error(`Message: ${error.message}`);
+
+  console.error('Response Data:', error.response?.data);
+  console.error('Response Headers:', error.response?.headers);
+  console.error('Full Error:', error);
+
+  this.logger.error('=====================================');
+
+  subscriber.error(error);
+}
       })();
     });
   }
