@@ -133,12 +133,17 @@ export class AiGatewayService {
   this.logger.error(`Status Text: ${error.response?.statusText}`);
   this.logger.error(`Message: ${error.message}`);
 
-  console.error(
-  'Response Data:',
-  error.response?.data?.toString?.() || error.response?.data,
-);
-  console.error('Response Headers:', error.response?.headers);
-  console.error('Full Error:', error);
+  if (error.response?.data) {
+    let body = '';
+
+    error.response.data.on('data', (chunk: Buffer) => {
+      body += chunk.toString();
+    });
+
+    error.response.data.on('end', () => {
+      this.logger.error(`OpenRouter Error Body: ${body}`);
+    });
+  }
 
   this.logger.error('=====================================');
 
