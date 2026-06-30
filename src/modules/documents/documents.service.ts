@@ -137,7 +137,7 @@ export class DocumentsService {
     const searchResults = await this.semanticSearch(question, userId);
 
 const relevantChunks = searchResults.filter(
-  (chunk: any) => Number(chunk.distance) < 0.45,
+  (chunk: any) => Number(chunk.distance) < 0.7,
 );
 
     const context = relevantChunks
