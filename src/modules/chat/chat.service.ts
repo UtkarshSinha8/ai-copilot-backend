@@ -32,7 +32,7 @@ export class ChatService {
   ): Promise<Chat> {
     const chat = this.chatRepository.create({
       title: createChatDto.title || 'New Chat',
-      model: createChatDto.model || 'deepseek/deepseek-r1:free',
+      model: createChatDto.model || 'openrouter/free',
       // userId set via RelationId — we set the relation by passing user id
       user: { id: userId },
     });

@@ -214,7 +214,7 @@ Answer:
           content: prompt,
         },
       ],
-      'deepseek/deepseek-r1:free',
+      'openrouter/free',
     );
 
     const result = {

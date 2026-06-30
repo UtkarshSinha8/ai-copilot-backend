@@ -31,7 +31,7 @@ export class Chat {
   @RelationId((chat: Chat) => chat.user)
   userId!: string;
 
-  @Column({ default: 'deepseek/deepseek-r1:free' })
+  @Column({ default: 'openrouter/free' })
   model!: string;
 
   @Column({ default: true })
