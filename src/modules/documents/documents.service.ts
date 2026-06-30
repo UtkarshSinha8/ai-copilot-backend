@@ -134,7 +134,11 @@ export class DocumentsService {
         };
       }
     }
-    const relevantChunks = await this.semanticSearch(question, userId);
+    const searchResults = await this.semanticSearch(question, userId);
+
+const relevantChunks = searchResults.filter(
+  (chunk: any) => Number(chunk.distance) < 0.45,
+);
 
     const context = relevantChunks
   .map(
@@ -153,23 +157,9 @@ ${chunk.content}
     );
     const hasRelevantContext = relevantChunks.length > 0;
 
-    const prompt = `
+    const prompt = hasRelevantContext
+  ? `
 You are an intelligent AI Assistant designed to help users understand uploaded documents and answer their questions accurately.
-
-The uploaded documents may include:
-
-- Software engineering projects
-- Source code
-- Technical documentation
-- School notes
-- Study material
-- Coaching content
-- Assignments
-- Reports
-- PDFs
-- Text documents
-
-Your goal is to provide clear, accurate, and well-structured answers using the retrieved document context.
 
 Rules:
 
@@ -179,47 +169,36 @@ Rules:
 
 3. If the uploaded documents only partially answer the question, first explain what the documents contain, then complete the answer using your own general knowledge.
 
-4. If the uploaded documents do not contain the answer, clearly state that the information is not present in the documents, then answer the question using your own knowledge.
+4. Never invent or attribute information to the uploaded documents that is not actually present in the retrieved context.
 
-5. Never invent or attribute information to the uploaded documents that is not actually present in the retrieved context.
+5. Use headings and bullet points whenever they improve readability.
 
-6. Adapt your explanation to the document type.
-
-• For software projects:
-  - Explain the overall architecture.
-  - Describe important modules and components.
-  - Explain APIs, authentication, databases, and workflows.
-  - Mention important files whenever possible.
-
-• For educational content:
-  - Explain concepts in simple language.
-  - Break complex topics into steps.
-  - Include examples whenever appropriate.
-  - Summarize important points.
-
-7. Use headings and bullet points whenever they improve readability.
-
-8. Keep answers concise unless the user explicitly asks for detailed explanations.
-
-9. You are a general AI assistant, not only a document search engine.
-
-10. You should always attempt to answer the user's question, even if the uploaded documents do not contain the answer.
-
-11. When appropriate, relate your answer back to the uploaded documents by mentioning how the concept appears (or does not appear) in those documents.
-
-12. Do not refuse to answer simply because the uploaded documents lack the requested information.
+6. Keep answers concise unless the user explicitly asks for detailed explanations.
 
 Retrieved Context:
 
-${
-  hasRelevantContext
-    ? context
-    : 'No relevant document context was retrieved for this question.'
-}
+${context}
 
 Number of Retrieved Chunks:
 
 ${relevantChunks.length}
+
+User Question:
+
+${question}
+
+Answer:
+`
+  : `
+You are a helpful and knowledgeable AI assistant.
+
+No relevant information was found in the uploaded documents for this question.
+
+Answer the user's question naturally using your own knowledge.
+
+If appropriate, mention that the uploaded documents do not contain information related to the question, but do not refuse to answer.
+
+Use clear explanations and examples whenever appropriate.
 
 User Question:
 
