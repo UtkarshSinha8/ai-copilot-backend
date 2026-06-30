@@ -52,7 +52,7 @@ export class DocumentsService {
     WHERE c."userId" = $2
       AND c.embedding IS NOT NULL
     ORDER BY c.embedding <=> $1::vector
-    LIMIT 5
+    LIMIT 8
     `,
       [JSON.stringify(queryEmbedding), userId],
     );
